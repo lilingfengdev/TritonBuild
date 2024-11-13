@@ -10,9 +10,9 @@ dependencies {
     compileOnly project(':core')
     compileOnly project(':core:triton-core-loader')
 
-    annotationProcessor 'com.velocitypowered:velocity-api:3.3.0-SNAPSHOT'
+    annotationProcessor 'com.velocitypowered:velocity-api:3.4.0-SNAPSHOT'
 
-    compileOnly 'com.velocitypowered:velocity-proxy:3.3.0-SNAPSHOT'
+    compileOnly 'com.velocitypowered:velocity-proxy:3.4.0-SNAPSHOT'
 
     compileOnly 'io.netty:netty-codec:4.1.80.Final'
 
