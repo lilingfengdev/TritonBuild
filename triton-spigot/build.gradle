@@ -22,7 +22,7 @@ dependencies {
     compileOnly 'net.kyori:adventure-text-serializer-bungeecord:4.3.4'
 
     compileOnly 'com.comphenix.protocol:ProtocolLib:5.3.0-SNAPSHOT'
-    compileOnly 'me.clip:placeholderapi:2.11.1'
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 
     // Libraries available on Spigot
     compileOnly 'org.fusesource.jansi:jansi:2.4.0' // Used for terminal translation
