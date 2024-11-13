@@ -6,7 +6,6 @@ import com.rexcantor64.triton.language.ExecutableCommand;
 import com.rexcantor64.triton.player.LanguagePlayer;
 import com.rexcantor64.triton.utils.SocketUtils;
 import com.rexcantor64.triton.velocity.VelocityTriton;
-import com.rexcantor64.triton.velocity.packetinterceptor.VelocityNettyDecoder;
 import com.rexcantor64.triton.velocity.packetinterceptor.VelocityNettyEncoder;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.Player;
@@ -135,8 +134,6 @@ public class VelocityLanguagePlayer implements LanguagePlayer {
 
     public void injectNettyPipeline() {
         ConnectedPlayer connectedPlayer = (ConnectedPlayer) this.parent;
-        connectedPlayer.getConnection().getChannel().pipeline()
-                .addAfter(Connections.MINECRAFT_DECODER, "triton-custom-decoder", new VelocityNettyDecoder(this));
         connectedPlayer.getConnection().getChannel().pipeline()
                 .addAfter(Connections.MINECRAFT_ENCODER, "triton-custom-encoder", new VelocityNettyEncoder(this));
     }
