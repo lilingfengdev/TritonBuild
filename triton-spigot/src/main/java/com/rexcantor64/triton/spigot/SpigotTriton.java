@@ -75,8 +75,6 @@ public class SpigotTriton extends Triton<SpigotLanguagePlayer, SpigotBridgeManag
 
     @Override
     public void onEnable() {
-        instance = this;
-
         super.onEnable();
 
         if (!this.isProtocolLibAvailable()) {

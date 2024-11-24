@@ -8,6 +8,7 @@ import com.rexcantor64.triton.config.MessagesConfig;
 import com.rexcantor64.triton.config.interfaces.Configuration;
 import com.rexcantor64.triton.config.interfaces.ConfigurationProvider;
 import com.rexcantor64.triton.config.interfaces.YamlConfiguration;
+import com.rexcantor64.triton.debug.DumpManager;
 import com.rexcantor64.triton.language.LanguageManager;
 import com.rexcantor64.triton.language.TranslationManager;
 import com.rexcantor64.triton.language.parser.AdventureParser;
@@ -21,6 +22,7 @@ import com.rexcantor64.triton.storage.LocalStorage;
 import com.rexcantor64.triton.storage.MysqlStorage;
 import com.rexcantor64.triton.storage.Storage;
 import com.rexcantor64.triton.utils.FileUtils;
+import com.rexcantor64.triton.utils.TritonAPIUtils;
 import com.rexcantor64.triton.web.TwinManager;
 import lombok.Getter;
 import lombok.val;
@@ -55,6 +57,7 @@ public abstract class Triton<P extends LanguagePlayer, B extends BridgeManager> 
     protected final B bridgeManager;
     private Storage storage;
     private TritonLogger logger;
+    private DumpManager dumpManager;
 
     protected Triton(PlayerManager<P> playerManager, B bridgeManager) {
         this.playerManager = playerManager;
@@ -86,6 +89,9 @@ public abstract class Triton<P extends LanguagePlayer, B extends BridgeManager> 
     }
 
     protected void onEnable() {
+        instance = this;
+        TritonAPIUtils.register(instance);
+
         translationsFolder = new File(getDataFolder(), "translations");
 
         logger = loader.getTritonLogger();
@@ -105,6 +111,7 @@ public abstract class Triton<P extends LanguagePlayer, B extends BridgeManager> 
     public void reload() {
         configYAML = loadYAML("config", getConfigFileName());
         config.setup();
+        dumpManager = new DumpManager();
         logger.setLogLevel(config.getLogLevel());
         messagesConfig.setup();
         setupStorage();

@@ -2,12 +2,12 @@ package com.rexcantor64.triton.spigot.placeholderapi;
 
 import com.rexcantor64.triton.api.language.Localized;
 import com.rexcantor64.triton.spigot.SpigotTriton;
+import com.rexcantor64.triton.utils.ComponentUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Relational;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +47,7 @@ public class TritonPlaceholderHook extends PlaceholderExpansion implements Relat
             locale = triton.getPlayerManager().get(p.getUniqueId());
         }
         val component = triton.getTranslationManager().getTextComponentOr404(locale, params);
-        val text = LegacyComponentSerializer.legacySection().serialize(component);
+        val text = ComponentUtils.serializeToLegacy(component);
 
         return PlaceholderAPI.setPlaceholders(p, text);
     }

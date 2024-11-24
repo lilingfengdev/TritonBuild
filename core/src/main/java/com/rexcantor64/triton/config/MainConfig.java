@@ -118,6 +118,7 @@ public class MainConfig implements TritonConfig {
     private long databaseMysqlPoolConnTimeout;
     private Map<String, String> databaseMysqlPoolProperties;
     private boolean iKnowWhatIAmDoing;
+    private String twinInstance;
 
     public MainConfig(Triton<?, ?> main) {
         this.main = main;
@@ -185,6 +186,7 @@ public class MainConfig implements TritonConfig {
         setupLanguageCreation(languageCreation);
 
         this.iKnowWhatIAmDoing = section.getBoolean("i-know-what-i-am-doing", false);
+        this.twinInstance = section.getString("twin-instance", "https://twin.rexcantor64.com");
     }
 
     public void setup() {

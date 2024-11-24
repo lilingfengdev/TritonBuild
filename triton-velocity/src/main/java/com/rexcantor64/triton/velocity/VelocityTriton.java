@@ -14,6 +14,7 @@ import com.velocitypowered.api.proxy.messages.ChannelIdentifier;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.val;
 import org.bstats.charts.SingleLineChart;
 import org.bstats.velocity.Metrics;
@@ -47,7 +48,6 @@ public class VelocityTriton extends Triton<VelocityLanguagePlayer, VelocityBridg
 
     @Override
     public void onEnable() {
-        instance = this;
         super.onEnable();
 
         // bStats
@@ -94,8 +94,8 @@ public class VelocityTriton extends Triton<VelocityLanguagePlayer, VelocityBridg
     }
 
     @Override
-    public String getVersion() {
-        return "@version@";
+    public @NonNull String getVersion() {
+        return getLoader().getPluginContainer().getDescription().getVersion().orElse("unknown");
     }
 
     @Override

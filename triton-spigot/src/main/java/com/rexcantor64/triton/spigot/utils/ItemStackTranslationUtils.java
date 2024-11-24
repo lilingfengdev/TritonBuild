@@ -58,7 +58,7 @@ public class ItemStackTranslationUtils {
      * @param translateBooks Whether it should translate written books
      * @return The translated item stack, which may or may not be the same as the given parameter
      */
-    @Contract("null, _, _ -> null")
+    @Contract("null, _, _ -> null; !null, _, _ -> !null")
     public static @Nullable ItemStack translateItemStack(@Nullable ItemStack item, @NotNull Localized languagePlayer, boolean translateBooks) {
         if (item == null || item.getType() == Material.AIR) {
             return item;

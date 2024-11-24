@@ -17,13 +17,22 @@ import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -48,10 +57,10 @@ public class AdventureParser implements MessageParser {
     @Override
     public @NotNull TranslationResult<String> translateString(String text, Localized language, FeatureSyntax syntax) {
         return translateComponent(
-                LegacyComponentSerializer.legacySection().deserialize(text),
+                ComponentUtils.deserializeFromLegacy(text),
                 language,
                 syntax
-        ).map(component -> LegacyComponentSerializer.legacySection().serialize(component));
+        ).map(ComponentUtils::serializeToLegacy);
     }
 
     /**
@@ -79,6 +88,9 @@ public class AdventureParser implements MessageParser {
                 // TODO properly integrate this
                 (key, arguments) -> Triton.get().getTranslationManager().getTextComponentOr404(language, key, arguments)
         );
+
+        Triton.get().getDumpManager().dump(component, language, syntax);
+
         return translateComponent(component, configuration);
     }
 

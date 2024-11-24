@@ -9,8 +9,10 @@ import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.LoginEvent;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
+import com.velocitypowered.api.event.player.PlayerSettingsChangedEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
+import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import lombok.val;
 import net.kyori.adventure.text.Component;
@@ -50,6 +52,11 @@ public class VelocityListener {
             val lp = (VelocityLanguagePlayer) Triton.get().getPlayerManager().get(e.getPlayer().getUniqueId());
             VelocityTriton.asVelocity().getBridgeManager().sendPlayerLanguage(lp);
 
+            if (lp.getProtocolVersion().compareTo(ProtocolVersion.MINECRAFT_1_20_3) > 0) {
+                // On 1.20.6 and above, the notchian client crashes if a bossbar that does not exist client-side is updated
+                lp.clearCachedBossbars();
+            }
+
             if (Triton.get().getConf().isRunLanguageCommandsOnLogin()) {
                 lp.executeCommands(serverConnection.getServer());
             }
@@ -62,6 +69,12 @@ public class VelocityListener {
         val lp = new VelocityLanguagePlayer(player);
         VelocityTriton.asVelocity().getPlayerManager().registerPlayer(lp);
         lp.injectNettyPipeline();
+    }
+
+    @Subscribe
+    public void onPlayerSettingsUpdate(PlayerSettingsChangedEvent event) {
+        val lp = VelocityTriton.asVelocity().getPlayerManager().get(event.getPlayer().getUniqueId());
+        lp.setClientLocale(event.getPlayerSettings().getLocale().toString());
     }
 
     @Subscribe(order = PostOrder.LAST)

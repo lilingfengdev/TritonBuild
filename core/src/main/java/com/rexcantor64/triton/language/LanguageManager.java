@@ -5,6 +5,7 @@ import com.rexcantor64.triton.api.language.Language;
 import com.rexcantor64.triton.api.language.SignLocation;
 import com.rexcantor64.triton.api.players.LanguagePlayer;
 import com.rexcantor64.triton.language.localized.StringLocale;
+import com.rexcantor64.triton.utils.ComponentUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -40,7 +41,7 @@ public class LanguageManager implements com.rexcantor64.triton.api.language.Lang
                 .map(arg -> LegacyComponentSerializer.legacyAmpersand().deserialize(arg))
                 .toArray(Component[]::new);
         val resultComponent = triton.getTranslationManager().getTextComponentOr404(p, code, argsComponents);
-        return LegacyComponentSerializer.legacySection().serialize(resultComponent);
+        return ComponentUtils.serializeToLegacy(resultComponent);
     }
 
     @Deprecated
@@ -50,7 +51,7 @@ public class LanguageManager implements com.rexcantor64.triton.api.language.Lang
                 .map(arg -> LegacyComponentSerializer.legacyAmpersand().deserialize(arg))
                 .toArray(Component[]::new);
         val resultComponent = triton.getTranslationManager().getTextComponentOr404(new StringLocale(languageName), code, argsComponents);
-        return LegacyComponentSerializer.legacySection().serialize(resultComponent);
+        return ComponentUtils.serializeToLegacy(resultComponent);
     }
 
     @Deprecated
@@ -81,13 +82,13 @@ public class LanguageManager implements com.rexcantor64.triton.api.language.Lang
                         new StringLocale(language),
                         location,
                         () -> Arrays.stream(defaultLines.get())
-                                .map(line -> LegacyComponentSerializer.legacySection().deserialize(line))
+                                .map(ComponentUtils::deserializeFromLegacy)
                                 .toArray(Component[]::new)
                 );
 
         return signComponents.map(components ->
                         Arrays.stream(components)
-                                .map(line -> LegacyComponentSerializer.legacySection().serialize(line))
+                                .map(ComponentUtils::serializeToLegacy)
                                 .toArray(String[]::new)
                 )
                 .orElse(null);

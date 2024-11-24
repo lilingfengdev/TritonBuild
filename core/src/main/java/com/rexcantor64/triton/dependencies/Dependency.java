@@ -16,16 +16,16 @@ public enum Dependency {
     ADVENTURE(
             "net{}kyori",
             "adventure-api",
-            "4.15.0",
-            "TDRoKSrXCMxo/4+pd4/tKvfbcagSYfeQRmzQM/8BgZQ=",
+            "4.17.0",
+            "FcjC6xpp2LG8kU9VQ1PajufPB0wFyAdNqYmK7lxw0Ng=",
             relocate("net{}kyori{}adventure", "adventure"),
             relocate("net{}kyori{}examination", "kyori{}examination")
     ),
     ADVENTURE_TEXT_SERIALIZER_GSON(
             "net{}kyori",
             "adventure-text-serializer-gson",
-            "4.15.0",
-            "0t/P0pGWrqe0zNNySTUrWmEFbM7ijGXv9KmJ9zfuIDo=",
+            "4.17.0",
+            "YifWv9LWrm0SHT3NpZDTP/g3POpliUhd8/e3Wwnn0hA=",
             relocate("net{}kyori{}option", "kyori{}option"),
             relocateIf("net{}kyori{}adventure", "adventure", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIf("net{}kyori{}examination", "kyori{}examination", LoaderFlag.RELOCATE_ADVENTURE),
@@ -35,8 +35,8 @@ public enum Dependency {
     ADVENTURE_TEXT_SERIALIZER_LEGACY(
             "net{}kyori",
             "adventure-text-serializer-legacy",
-            "4.15.0",
-            "05buwHoYTm1E8/wJBJDZiCzMlinvDhmR51kIhceIDgs=",
+            "4.17.0",
+            "nUlVVC5A61tB2+0XKygmrPHL40BeAC8zYOsupXjVNro=",
             relocateIf("net{}kyori{}adventure", "adventure", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIf("net{}kyori{}examination", "kyori{}examination", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIfNot("net{}kyori{}adventure{}text{}serializer{}legacy", "adventure{}text{}serializer{}legacy", LoaderFlag.RELOCATE_ADVENTURE)
@@ -44,8 +44,8 @@ public enum Dependency {
     ADVENTURE_TEXT_SERIALIZER_PLAIN(
             "net{}kyori",
             "adventure-text-serializer-plain",
-            "4.15.0",
-            "T9uUMFA3ehElOSOfEOcy0tukCyoh8lKDlYooIypz+Ok=",
+            "4.17.0",
+            "Im1KPSxCt3J98RoCppjGxkR1OEcF3RK/Asf2l0R5nC4=",
             relocateIf("net{}kyori{}adventure", "adventure", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIf("net{}kyori{}examination", "kyori{}examination", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIfNot("net{}kyori{}adventure{}text{}serializer{}plain", "adventure{}text{}serializer{}plain", LoaderFlag.RELOCATE_ADVENTURE)
@@ -53,7 +53,7 @@ public enum Dependency {
     ADVENTURE_TEXT_SERIALIZER_BUNGEECORD(
             "net{}kyori",
             "adventure-text-serializer-bungeecord",
-            "4.3.2",
+            "4.3.4",
             "4bw3bG3HohAAFgFXNc5MzFNNKya/WrgqrHUcUDIFbDk=",
             relocate("net{}kyori{}option", "kyori{}option"),
             relocateIf("net{}kyori{}adventure", "adventure", LoaderFlag.RELOCATE_ADVENTURE),
@@ -66,8 +66,8 @@ public enum Dependency {
     ADVENTURE_MINI_MESSAGE(
             "net{}kyori",
             "adventure-text-minimessage",
-            "4.15.0",
-            "vsTSXxNV6TlBJFEobBkwnQa1qg3vXd6GBJnQDych2so=",
+            "4.17.0",
+            "g3Kp6bwMCuIdYObObihKgcbJbR7DmPgIglAVxvYCUvU=",
             relocate("net{}kyori{}option", "kyori{}option"),
             relocateIf("net{}kyori{}adventure", "adventure", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIf("net{}kyori{}examination", "kyori{}examination", LoaderFlag.RELOCATE_ADVENTURE),
@@ -81,16 +81,16 @@ public enum Dependency {
     ADVENTURE_KEY(
             "net{}kyori",
             "adventure-key",
-            "4.15.0",
-            "fG80fIMSZFVT941uItSDVVbUNtUBioL6sHxK3uDW/tc=",
+            "4.17.0",
+            "jlz1cGEtbM7flDrBcWpEneLdWpAge33m9zwCNpNbdm4=",
             relocate("net{}kyori{}adventure", "adventure"),
             relocateIf("net{}kyori{}examination", "kyori{}examination", LoaderFlag.RELOCATE_ADVENTURE)
     ),
     ADVENTURE_TEXT_SERIALIZER_JSON(
             "net{}kyori",
             "adventure-text-serializer-json",
-            "4.15.0",
-            "IjUGO0PYrqRiXPrCgKHlJ1NmDq0b4rk4Gz544ouMI6Y=",
+            "4.17.0",
+            "bJHT4jsGTXarfBVOvpQPVSIyrheLldIbUN/c/sKSXZY=",
             relocate("net{}kyori{}option", "kyori{}option"),
             relocateIf("net{}kyori{}adventure", "adventure", LoaderFlag.RELOCATE_ADVENTURE),
             relocateIf("net{}kyori{}examination", "kyori{}examination", LoaderFlag.RELOCATE_ADVENTURE),

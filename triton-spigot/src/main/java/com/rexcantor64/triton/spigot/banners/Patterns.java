@@ -1,9 +1,16 @@
 package com.rexcantor64.triton.spigot.banners;
 
 import lombok.Getter;
+import lombok.val;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
+import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Locale;
 
 @Getter
 public enum Patterns {
@@ -50,6 +57,18 @@ public enum Patterns {
     private final char code;
     private final String[] typeAliases;
 
+    private final static @Nullable Method valueOfMethod;
+
+    static {
+        @Nullable Method method;
+        try {
+            method = PatternType.class.getMethod("valueOf", String.class);
+        } catch (NoSuchMethodException e) {
+            method = null;
+        }
+        valueOfMethod = method;
+    }
+
     Patterns(char code, String... typeAliases) {
         this.code = code;
         this.typeAliases = typeAliases;
@@ -63,10 +82,43 @@ public enum Patterns {
     }
 
     public PatternType toPatternType() {
+        try {
+            // For 1.21.1 and above
+            return toPatternTypeFromRegistry();
+        } catch (NoClassDefFoundError | NoSuchMethodError | NoSuchFieldError ignore) {
+            // BANNER_PATTERN Registry does not exist in this Spigot version
+        }
+        // Fallback to enum's valueOf
+        return toPatternTypeFromEnum();
+    }
+
+    /**
+     * Gets the pattern type from Bukkit's registry.
+     * This is the correct way to get pattern types since Spigot 1.21.1.
+     *
+     * @return The Bukkit PatternType that corresponds to this type.
+     */
+    private PatternType toPatternTypeFromRegistry() {
+        for (String alias : this.typeAliases) {
+            val type = Registry.BANNER_PATTERN.get(NamespacedKey.fromString(alias.toLowerCase(Locale.ROOT)));
+            if (type != null) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Cannot find corresponding pattern type to " + Arrays.toString(this.typeAliases));
+    }
+
+    /**
+     * Gets the pattern type from the PatternType enum itself.
+     * This only works up to Spigot 1.21.0.
+     *
+     * @return The Bukkit PatternType that corresponds to this type.
+     */
+    private PatternType toPatternTypeFromEnum() {
         for (String alias : this.typeAliases) {
             try {
-                return PatternType.valueOf(alias);
-            } catch (IllegalArgumentException ignore) {
+                return (PatternType) valueOfMethod.invoke(null, alias);
+            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException ignore) {
             }
         }
         throw new IllegalArgumentException("Cannot find corresponding pattern type to " + Arrays.toString(this.typeAliases));

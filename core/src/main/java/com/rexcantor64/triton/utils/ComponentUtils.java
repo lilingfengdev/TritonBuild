@@ -23,6 +23,11 @@ import java.util.stream.IntStream;
 public class ComponentUtils {
 
     public final static char SECTION_CHAR = '§';
+    private final static LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection()
+            .toBuilder()
+            .hexColors()
+            .useUnusualXRepeatedCharacterHexFormat()
+            .build();
 
     /**
      * Deserialize a JSON string representing a {@link Component}.
@@ -42,6 +47,28 @@ public class ComponentUtils {
      */
     public static String serializeToJson(@NotNull Component component) {
         return GsonComponentSerializer.gson().serialize(component);
+    }
+
+    /**
+     * Deserialize a legacy string, that might contain hex characters in the md_5's
+     * chat library format, representing a {@link Component}.
+     *
+     * @param message The legacy string to deserialize.
+     * @return The corresponding {@link Component}.
+     */
+    public static Component deserializeFromLegacy(@NotNull String message) {
+        return LEGACY_SERIALIZER.deserialize(message);
+    }
+
+    /**
+     * Serialize a {@link Component} to a legacy string, preserving hex characters in
+     * the md_5's chat library format.
+     *
+     * @param component The {@link Component} to serialize.
+     * @return The corresponding legacy string.
+     */
+    public static String serializeToLegacy(@NotNull Component component) {
+        return LEGACY_SERIALIZER.serialize(component);
     }
 
     /**
@@ -141,8 +168,7 @@ public class ComponentUtils {
         if (component instanceof TextComponent) {
             final TextComponent textComponent = (TextComponent) component;
             if (hasLegacyFormatting(textComponent.content())) {
-                val deserializedComponent = LegacyComponentSerializer.legacySection()
-                        .deserialize(textComponent.content());
+                val deserializedComponent = deserializeFromLegacy(textComponent.content());
                 val children = new ArrayList<>(deserializedComponent.children());
                 children.addAll(newChildren);
                 return deserializedComponent.applyFallbackStyle(textComponent.style())

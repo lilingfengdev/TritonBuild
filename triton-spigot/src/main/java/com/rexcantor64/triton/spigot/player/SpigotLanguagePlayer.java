@@ -2,6 +2,7 @@ package com.rexcantor64.triton.spigot.player;
 
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MinecraftKey;
+import com.comphenix.protocol.wrappers.WrappedNumberFormat;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.rexcantor64.triton.Triton;
 import com.rexcantor64.triton.api.events.PlayerChangeLanguageSpigotEvent;
@@ -24,6 +25,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -79,7 +81,7 @@ public class SpigotLanguagePlayer implements LanguagePlayer {
         load();
     }
 
-    public void setScoreboardObjective(String name, String chatJson, Object type, Object numberFormat) {
+    public void setScoreboardObjective(String name, String chatJson, EnumWrappers.RenderType type, @Nullable WrappedNumberFormat numberFormat) {
         ScoreboardObjective objective = this.objectivesMap.computeIfAbsent(name, k -> new ScoreboardObjective());
         objective.setChatJson(chatJson);
         objective.setType(type);
@@ -287,8 +289,9 @@ public class SpigotLanguagePlayer implements LanguagePlayer {
     @Data
     public static class ScoreboardObjective {
         private String chatJson;
-        private Object type;
-        private Object numberFormat;
+        private EnumWrappers.RenderType type;
+        @Nullable
+        private WrappedNumberFormat numberFormat;
     }
 
     @Data

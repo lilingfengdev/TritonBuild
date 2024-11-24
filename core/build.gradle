@@ -14,10 +14,10 @@ dependencies {
     compileOnly project(":api")
 
     // Adventure / MiniMessage
-    compileOnly 'net.kyori:adventure-text-serializer-gson:4.15.0'
-    compileOnly 'net.kyori:adventure-text-serializer-legacy:4.15.0'
-    compileOnly 'net.kyori:adventure-text-serializer-plain:4.15.0'
-    compileOnly('net.kyori:adventure-text-minimessage:4.15.0') {
+    compileOnly 'net.kyori:adventure-text-serializer-gson:4.17.0'
+    compileOnly 'net.kyori:adventure-text-serializer-legacy:4.17.0'
+    compileOnly 'net.kyori:adventure-text-serializer-plain:4.17.0'
+    compileOnly('net.kyori:adventure-text-minimessage:4.17.0') {
         exclude group: 'net.kyori', module: 'adventure-api'
         exclude group: 'net.kyori', module: 'adventure-key'
         exclude group: 'net.kyori', module: 'adventure-text-serialize-gson'
@@ -46,10 +46,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
 
-    testImplementation 'net.kyori:adventure-api:4.15.0'
-    testImplementation 'net.kyori:adventure-text-serializer-gson:4.15.0'
-    testImplementation 'net.kyori:adventure-text-serializer-legacy:4.15.0'
-    testImplementation 'net.kyori:adventure-text-serializer-plain:4.15.0'
+    testImplementation 'net.kyori:adventure-api:4.17.0'
+    testImplementation 'net.kyori:adventure-text-serializer-gson:4.17.0'
+    testImplementation 'net.kyori:adventure-text-serializer-legacy:4.17.0'
+    testImplementation 'net.kyori:adventure-text-serializer-plain:4.17.0'
 }
 
 shadowJar {
@@ -59,12 +59,6 @@ shadowJar {
     //relocate 'org.slf4j', 'com.rexcantor64.shaded.slf4j'
     relocate 'com.tananaev.jsonpatch', 'com.rexcantor64.shaded.jsonpatch'
     relocate 'com.zaxxer.hikari', 'com.rexcantor64.shaded.hikari'
-
-    relocate 'net.kyori.adventure.text.minimessage', 'com.rexcantor64.triton.lib.adventure.text.minimessage'
-    relocate 'net.kyori.adventure.text.serializer.gson', 'com.rexcantor64.triton.lib.adventure.text.serializer.gson'
-    relocate 'net.kyori.adventure.text.serializer.legacy', 'com.rexcantor64.triton.lib.adventure.text.serializer.legacy'
-    relocate 'net.kyori.adventure.text.serializer.plain', 'com.rexcantor64.triton.lib.adventure.text.serializer.plain'
-    relocate 'net.kyori.adventure.text.serializer.bungeecord', 'com.rexcantor64.triton.lib.adventure.text.serializer.bungeecord'
 
     relocate 'net.byteflux.libby', 'com.rexcantor64.triton.lib.libby'
 }

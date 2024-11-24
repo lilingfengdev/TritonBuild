@@ -56,7 +56,6 @@ public class BungeeTriton extends Triton<BungeeLanguagePlayer, BungeeBridgeManag
 
     @Override
     public void onEnable() {
-        instance = this;
         super.onEnable();
 
         Metrics metrics = new Metrics(getPlugin(), 5607);

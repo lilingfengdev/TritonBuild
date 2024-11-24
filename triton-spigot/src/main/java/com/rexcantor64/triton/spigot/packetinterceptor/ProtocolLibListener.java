@@ -11,18 +11,18 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.WrappedNumberFormat;
 import com.comphenix.protocol.wrappers.WrappedTeamParameters;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.rexcantor64.triton.Triton;
-import com.rexcantor64.triton.api.language.MessageParser;
 import com.rexcantor64.triton.language.item.SignLocation;
 import com.rexcantor64.triton.language.parser.AdventureParser;
 import com.rexcantor64.triton.spigot.SpigotTriton;
@@ -33,8 +33,8 @@ import com.rexcantor64.triton.spigot.utils.NMSUtils;
 import com.rexcantor64.triton.spigot.utils.WrappedComponentUtils;
 import com.rexcantor64.triton.spigot.wrappers.WrappedClientConfiguration;
 import com.rexcantor64.triton.utils.ComponentUtils;
-import com.rexcantor64.triton.utils.ReflectionUtils;
 import com.rexcantor64.triton.wrappers.WrappedPlayerChatMessage;
+import lombok.Getter;
 import lombok.val;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -67,16 +67,10 @@ import static com.rexcantor64.triton.spigot.packetinterceptor.HandlerFunction.as
 @SuppressWarnings({"deprecation"})
 public class ProtocolLibListener implements PacketListener {
     private final Class<?> CONTAINER_PLAYER_CLASS;
-    private final Class<?> MERCHANT_RECIPE_LIST_CLASS;
-    private final MethodAccessor CRAFT_MERCHANT_RECIPE_FROM_BUKKIT_METHOD;
-    private final MethodAccessor CRAFT_MERCHANT_RECIPE_TO_MINECRAFT_METHOD;
     private final Class<BaseComponent[]> BASE_COMPONENT_ARRAY_CLASS = BaseComponent[].class;
     private final Class<Component> ADVENTURE_COMPONENT_CLASS = Component.class;
-    private final Optional<Class<?>> NUMBER_FORMAT_CLASS;
     private final FieldAccessor PLAYER_ACTIVE_CONTAINER_FIELD;
     private final FieldAccessor PLAYER_INVENTORY_CONTAINER_FIELD;
-    private final String MERCHANT_RECIPE_SPECIAL_PRICE_FIELD;
-    private final String MERCHANT_RECIPE_DEMAND_FIELD;
     private final String SIGN_NBT_ID;
 
     private final HandlerFunction ASYNC_PASSTHROUGH = asAsync((_packet, _player) -> {
@@ -92,30 +86,14 @@ public class ProtocolLibListener implements PacketListener {
     private final Map<PacketType, HandlerFunction> packetHandlers = new HashMap<>();
     private final AtomicBoolean firstRun = new AtomicBoolean(true);
 
+    @Getter
+    private ListeningWhitelist sendingWhitelist;
+    @Getter
+    private ListeningWhitelist receivingWhitelist;
+
     public ProtocolLibListener(SpigotTriton main, HandlerFunction.HandlerType... allowedTypes) {
         this.main = main;
         this.allowedTypes = Arrays.asList(allowedTypes);
-        if (MinecraftVersion.VILLAGE_UPDATE.atOrAbove()) { // 1.14+
-            MERCHANT_RECIPE_LIST_CLASS = MinecraftReflection.getMerchantRecipeList();
-        } else {
-            MERCHANT_RECIPE_LIST_CLASS = null;
-        }
-        if (MinecraftVersion.VILLAGE_UPDATE.atOrAbove()) { // 1.14+
-            val craftMerchantRecipeClass = MinecraftReflection.getCraftBukkitClass("inventory.CraftMerchantRecipe");
-            CRAFT_MERCHANT_RECIPE_FROM_BUKKIT_METHOD = Accessors.getMethodAccessor(craftMerchantRecipeClass, "fromBukkit", MerchantRecipe.class);
-            CRAFT_MERCHANT_RECIPE_TO_MINECRAFT_METHOD = Accessors.getMethodAccessor(craftMerchantRecipeClass, "toMinecraft");
-        } else {
-            CRAFT_MERCHANT_RECIPE_FROM_BUKKIT_METHOD = null;
-            CRAFT_MERCHANT_RECIPE_TO_MINECRAFT_METHOD = null;
-        }
-        if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) { // 1.17+
-            MERCHANT_RECIPE_SPECIAL_PRICE_FIELD = "g";
-            MERCHANT_RECIPE_DEMAND_FIELD = "h";
-        } else {
-            MERCHANT_RECIPE_SPECIAL_PRICE_FIELD = "specialPrice";
-            MERCHANT_RECIPE_DEMAND_FIELD = "demand";
-        }
-        NUMBER_FORMAT_CLASS = MinecraftReflection.getOptionalNMS("network.chat.numbers.NumberFormat");
         if (MinecraftVersion.EXPLORATION_UPDATE.atOrAbove()) { // 1.11+
             SIGN_NBT_ID = "minecraft:sign";
         } else {
@@ -201,8 +179,8 @@ public class ProtocolLibListener implements PacketListener {
         }
         packetHandlers.put(PacketType.Play.Server.WINDOW_ITEMS, asAsync(this::handleWindowItems));
         packetHandlers.put(PacketType.Play.Server.SET_SLOT, asAsync(this::handleSetSlot));
-        if (MinecraftVersion.VILLAGE_UPDATE.atOrAbove()) { // 1.14+
-            // Villager merchant interface redesign on 1.14
+        if (MinecraftVersion.CAVES_CLIFFS_2.atOrAbove()) { // 1.18+
+            // While the villager merchant interface redesign was on 1.14, the Bukkit API only has all fields on 1.18
             packetHandlers.put(PacketType.Play.Server.OPEN_WINDOW_MERCHANT, asAsync(this::handleMerchantItems));
         }
 
@@ -213,6 +191,38 @@ public class ProtocolLibListener implements PacketListener {
         bossBarPacketHandler.registerPacketTypes(packetHandlers);
         entitiesPacketHandler.registerPacketTypes(packetHandlers);
         signPacketHandler.registerPacketTypes(packetHandlers);
+
+        setupListenerWhitelists();
+    }
+
+    private void setupListenerWhitelists() {
+        val sendingTypes = packetHandlers.entrySet().stream()
+                .filter(entry -> this.allowedTypes.contains(entry.getValue().getHandlerType()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        sendingWhitelist = ListeningWhitelist.newBuilder()
+                .gamePhase(GamePhase.PLAYING)
+                .types(sendingTypes)
+                .mergeOptions(ListenerOptions.ASYNC)
+                .highest()
+                .build();
+
+        val receivingTypes = new ArrayList<PacketType>();
+        if (this.allowedTypes.contains(HandlerFunction.HandlerType.SYNC)) {
+            // only listen for these packets in the sync handler
+            receivingTypes.add(PacketType.Play.Client.SETTINGS);
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) { // MC 1.20.2
+                receivingTypes.add(PacketType.Configuration.Client.CLIENT_INFORMATION);
+            }
+        }
+
+        receivingWhitelist = ListeningWhitelist.newBuilder()
+                .gamePhase(GamePhase.PLAYING)
+                .types(receivingTypes)
+                .mergeOptions(ListenerOptions.ASYNC)
+                .highest()
+                .build();
     }
 
     /* PACKET HANDLERS */
@@ -607,37 +617,34 @@ public class ProtocolLibListener implements PacketListener {
         packet.getPacket().getItemModifier().writeSafely(0, item);
     }
 
-    @SuppressWarnings({"unchecked"})
     private void handleMerchantItems(PacketEvent packet, SpigotLanguagePlayer languagePlayer) {
         if (!main.getConfig().isItems()) return;
 
-        try {
-            ArrayList<?> recipes = (ArrayList<?>) packet.getPacket()
-                    .getSpecificModifier(MERCHANT_RECIPE_LIST_CLASS).readSafely(0);
-            ArrayList<Object> newRecipes = (ArrayList<Object>) MERCHANT_RECIPE_LIST_CLASS.newInstance();
-            for (val recipeObject : recipes) {
-                val recipe = (MerchantRecipe) ReflectionUtils.getMethod(recipeObject, "asBukkit");
-                val originalSpecialPrice = ReflectionUtils.getDeclaredField(recipeObject, MERCHANT_RECIPE_SPECIAL_PRICE_FIELD);
-                val originalDemand = ReflectionUtils.getDeclaredField(recipeObject, MERCHANT_RECIPE_DEMAND_FIELD);
+        val recipes = packet.getPacket().getMerchantRecipeLists().readSafely(0);
+        val newRecipes = new ArrayList<MerchantRecipe>();
 
-                val newRecipe = new MerchantRecipe(ItemStackTranslationUtils.translateItemStack(recipe.getResult()
-                        .clone(), languagePlayer, false), recipe.getUses(), recipe.getMaxUses(), recipe
-                        .hasExperienceReward(), recipe.getVillagerExperience(), recipe.getPriceMultiplier());
+        for (val recipe : recipes) {
+            // Unfortunately this constructor does not exist in older Bukkit versions
+            // https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/commits/5dca4a4b8455ba1ee8d3e4e36894f6dcc4b04555
+            val newRecipe = new MerchantRecipe(
+                    ItemStackTranslationUtils.translateItemStack(recipe.getResult().clone(), languagePlayer, false),
+                    recipe.getUses(),
+                    recipe.getMaxUses(),
+                    recipe.hasExperienceReward(),
+                    recipe.getVillagerExperience(),
+                    recipe.getPriceMultiplier(),
+                    recipe.getDemand(),
+                    recipe.getSpecialPrice()
+            );
 
-                for (val ingredient : recipe.getIngredients()) {
-                    newRecipe.addIngredient(ItemStackTranslationUtils.translateItemStack(ingredient.clone(), languagePlayer, false));
-                }
-
-                Object newCraftRecipe = CRAFT_MERCHANT_RECIPE_FROM_BUKKIT_METHOD.invoke(null, newRecipe);
-                Object newNMSRecipe = CRAFT_MERCHANT_RECIPE_TO_MINECRAFT_METHOD.invoke(newCraftRecipe);
-                ReflectionUtils.setDeclaredField(newNMSRecipe, MERCHANT_RECIPE_SPECIAL_PRICE_FIELD, originalSpecialPrice);
-                ReflectionUtils.setDeclaredField(newNMSRecipe, MERCHANT_RECIPE_DEMAND_FIELD, originalDemand);
-                newRecipes.add(newNMSRecipe);
+            for (val ingredient : recipe.getIngredients()) {
+                newRecipe.addIngredient(ItemStackTranslationUtils.translateItemStack(ingredient.clone(), languagePlayer, false));
             }
-            packet.getPacket().getModifier().writeSafely(1, newRecipes);
-        } catch (IllegalAccessException | InstantiationException e) {
-            Triton.get().getLogger().logError(e, "Failed to translate merchant items.");
+
+            newRecipes.add(newRecipe);
         }
+
+        packet.getPacket().getMerchantRecipeLists().writeSafely(0, newRecipes);
     }
 
     private void handleScoreboardTeam(PacketEvent packet, SpigotLanguagePlayer languagePlayer) {
@@ -732,7 +739,7 @@ public class ProtocolLibListener implements PacketListener {
         val objectiveName = packet.getPacket().getStrings().readSafely(0);
         val mode = packet.getPacket().getIntegers().readSafely(0);
 
-        if (mode == 1) {
+        if (mode == 1) { // Mode 1 is REMOVE
             languagePlayer.removeScoreboardObjective(objectiveName);
             return;
         }
@@ -740,13 +747,22 @@ public class ProtocolLibListener implements PacketListener {
 
         val chatComponentsModifier = packet.getPacket().getChatComponents();
 
-        val healthDisplay = packet.getPacket().getModifier().readSafely(2);
         val displayName = chatComponentsModifier.readSafely(0);
-        val numberFormat = NUMBER_FORMAT_CLASS
-                .map(numberFormatClass -> packet.getPacket().getSpecificModifier(numberFormatClass).readSafely(0))
-                .orElse(null);
+        val renderType = packet.getPacket().getRenderTypes().readSafely(0);
+        WrappedNumberFormat numberFormat = null;
+        if (WrappedNumberFormat.isSupported()) {
+            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+                // on MC 1.20.5+ this field became an Optional
+                numberFormat = packet.getPacket()
+                        .getOptionals(BukkitConverters.getWrappedNumberFormatConverter())
+                        .readSafely(0)
+                        .orElse(null);
+            } else {
+                numberFormat = packet.getPacket().getNumberFormats().readSafely(0);
+            }
+        }
 
-        languagePlayer.setScoreboardObjective(objectiveName, displayName.getJson(), healthDisplay, numberFormat);
+        languagePlayer.setScoreboardObjective(objectiveName, displayName.getJson(), renderType, numberFormat);
 
         parser()
                 .translateComponent(
@@ -843,40 +859,6 @@ public class ProtocolLibListener implements PacketListener {
         }
     }
 
-    @Override
-    public ListeningWhitelist getSendingWhitelist() {
-        val types = packetHandlers.entrySet().stream()
-                .filter(entry -> this.allowedTypes.contains(entry.getValue().getHandlerType()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-
-        return ListeningWhitelist.newBuilder()
-                .gamePhase(GamePhase.PLAYING)
-                .types(types)
-                .mergeOptions(ListenerOptions.ASYNC)
-                .highest()
-                .build();
-    }
-
-    @Override
-    public ListeningWhitelist getReceivingWhitelist() {
-        val types = new ArrayList<PacketType>();
-        if (this.allowedTypes.contains(HandlerFunction.HandlerType.SYNC)) {
-            // only listen for these packets in the sync handler
-            types.add(PacketType.Play.Client.SETTINGS);
-            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) { // MC 1.20.2
-                types.add(PacketType.Configuration.Client.CLIENT_INFORMATION);
-            }
-        }
-
-        return ListeningWhitelist.newBuilder()
-                .gamePhase(GamePhase.PLAYING)
-                .types(types)
-                .mergeOptions(ListenerOptions.ASYNC)
-                .highest()
-                .build();
-    }
-
     /* REFRESH */
 
     public void refreshSigns(SpigotLanguagePlayer player) {
@@ -921,10 +903,16 @@ public class ProtocolLibListener implements PacketListener {
             packet.getIntegers().writeSafely(0, 2); // Update display name mode
             packet.getStrings().writeSafely(0, key);
             packet.getChatComponents().writeSafely(0, WrappedChatComponent.fromJson(value.getChatJson()));
-            packet.getModifier().writeSafely(2, value.getType());
-            NUMBER_FORMAT_CLASS.ifPresent(numberFormatClass ->
-                    packet.getSpecificModifier((Class<Object>) numberFormatClass)
-                            .writeSafely(0, value.getNumberFormat()));
+            packet.getRenderTypes().writeSafely(0, value.getType());
+            if (WrappedNumberFormat.isSupported()) {
+                if (MinecraftVersion.v1_20_5.atOrAbove()) {
+                    // on MC 1.20.5+ this field became an Optional
+                    packet.getOptionals(BukkitConverters.getWrappedNumberFormatConverter())
+                            .writeSafely(0, Optional.ofNullable(value.getNumberFormat()));
+                } else {
+                    packet.getNumberFormats().writeSafely(0, value.getNumberFormat());
+                }
+            }
             ProtocolLibrary.getProtocolManager().sendServerPacket(bukkitPlayer, packet, true);
         });
 
